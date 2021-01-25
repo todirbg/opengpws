@@ -49,6 +49,7 @@
 #include "egpws.h"
 #include "terr.h"
 #include "xplane.h"
+#include "glpriv.h"
 
 #define	LOAD_DEM_WORKER_INTVAL	1			/* seconds */
 #define	TERR_TILE_WORKER_INTVAL	1			/* seconds */
@@ -125,7 +126,15 @@ static worker_t	load_dem_worker_wk;
 static mutex_t dem_tile_cache_lock;
 static avl_tree_t dem_tile_cache;
 
-static GLuint DEM_prog = 0;
+static GLint DEM_prog = 0;
+
+static const shader_info_t DEM_vert_info = { .filename = "DEM.vert.spv" };
+static const shader_info_t DEM_frag_info = { .filename = "DEM.frag.spv" };
+static const shader_prog_info_t DEM_prog_info = {
+    .progname = "DEM",
+    .vert = &DEM_vert_info,
+    .frag = &DEM_frag_info
+};
 
 /*
  * The tile name lookup cache. Makes lookups for previously seen tiles faster.
@@ -189,7 +198,7 @@ load_dem_dsf(int lat, int lon, const dsf_atom_t **demi_p,
 	tnlc_ent_t *te;
 	avl_index_t where;
 
-	snprintf(dname, sizeof (dname), "%+03.0f%+04.0f", 
+	snprintf(dname, sizeof (dname), "%+03.0f%+04.0f",
 	    floor(lat / 10.0) * 10.0, floor(lon / 10.0) * 10.0);
 	snprintf(fname, sizeof (fname), "%+03d%+04d.dsf", lat, lon);
 
@@ -1412,21 +1421,5 @@ terr_have_data(geo_pos2_t pos, double *tile_load_res)
 void
 terr_reload_gl_progs(void)
 {
-	char *vtx_path, *frag_path;
-	GLuint prog;
-
-	vtx_path = mkpathname(get_xpdir(), get_plugindir(), "data",
-	    "DEM.vert", NULL);
-	frag_path = mkpathname(get_xpdir(), get_plugindir(), "data",
-	    "DEM.frag", NULL);
-	prog = shader_prog_from_file("DEM_shader", vtx_path, frag_path,
-	    DEFAULT_VTX_ATTRIB_BINDINGS, NULL);
-	lacf_free(vtx_path);
-	lacf_free(frag_path);
-
-	if (prog != 0) {
-		if (DEM_prog != 0)
-			glDeleteProgram(DEM_prog);
-		DEM_prog = prog;
-	}
+	reload_gl_prog(&DEM_prog, &DEM_prog_info);
 }
