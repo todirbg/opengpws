@@ -10,6 +10,20 @@ Darwin)
 	;;
 esac
 
+if ! which glslang &> /dev/null && ! which glslangValidator &> /dev/null; then
+	cat << EOF >&2
+Couldn't find the Vulkan SDK. Please download the SDK from:
+https://vulkan.lunarg.com/
+Then symlink glslangValidator and spirv-cross in your \$PATH
+
+On Ubuntu, you can use this guide to install the Vulkan SDK as a package
+(see section "Install the SDK"):
+https://vulkan.lunarg.com/doc/sdk/1.2.148.1/linux/getting_started_ubuntu.html
+With the Ubuntu package, everything will be set up for you.
+EOF
+	exit 1
+fi
+
 while getopts "G" o; do
 	case "${o}" in
 	G)
@@ -31,6 +45,10 @@ mkdir -p "$OUTPUT_DIR"
 
 ( cd qmake && ./build ) || exit 1
 
+if [[ $(uname) = Linux ]]; then
+	( cd data && make ) || exit 1
+fi
+
 if [[ $(uname) = "Linux" ]]; then
 	$INSTALL -- "qmake/output/lin_x64/${OUTPUT_DIR}.xpl" \
 	    "$OUTPUT_DIR/lin_x64/${OUTPUT_DIR}.xpl"
@@ -50,6 +68,11 @@ else
 	$INSTALL -- "qmake/output/mac_x64/${OUTPUT_DIR}.xpl" \
 	    "$OUTPUT_DIR/mac_x64/${OUTPUT_DIR}.xpl"
 fi
+
+find data/bin -iname '*.glsl*' -or -iname '*.spv' | \
+    while read; do
+	$INSTALL -- "$REPLY" "$OUTPUT_DIR/$REPLY"
+done
 
 find data -iname '*.flac' | fgrep -v '/src/' | while read; do
 	if ! [ -f "${REPLY/%.flac/.opus}" ]; then
