@@ -116,6 +116,7 @@ typedef struct {
 	double		scale;
 	vect2_t		offset;
 	vect2_t		disp_sz;	/* pixel-size of target */
+	GLuint		prog;		/* optional, pass 0 for default */
 } egpws_render_t;
 
 typedef enum {
@@ -143,7 +144,7 @@ typedef struct {
 
 typedef struct {
 	unsigned		num_pts;
-	geo_pos2_t		*in_pts;
+	const geo_pos2_t	*in_pts;
 	double			*out_elev;
 	vect3_t			*out_norm;
 	double			*out_water;
@@ -160,6 +161,7 @@ typedef struct {
 	void (*set_nav_on)(bool_t nav1_on, bool_t nav2_on);
 	void (*set_ranges)(const egpws_range_t *ranges);
 	void (*terr_render)(const egpws_render_t *render);
+	fpp_t (*terr_render_get_fpp)(const egpws_render_t *render);
 	egpws_advisory_t (*get_advisory)(void);
 	void (*set_sound_inh)(bool_t flag);
 	void (*set_sound_supp)(bool_t flag);
