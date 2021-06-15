@@ -1142,12 +1142,15 @@ update_tiles(void)
 static void
 draw_tiles(const egpws_render_t *render)
 {
-	fpp_t fpp = ortho_fpp_init(GEO3_TO_GEO2(render->position),
-	    render->rotation, &wgs84, B_FALSE);
+	fpp_t fpp;
 	const egpws_conf_t *conf = egpws_get_conf();
 	mat4 pvm;
 	GLfloat hgt_rngs_ft[4 * 2];
 	GLfloat hgt_colors[4 * 4];
+	GLuint prog;
+
+	ASSERT(render != NULL);
+	fpp = terr_render_get_fpp(render);
 
 	glm_ortho(0, render->disp_sz.x, 0, render->disp_sz.y, 0, 1, pvm);
 	glm_translate(pvm, (vec3){render->offset.x, render->offset.y, 0});
@@ -1162,16 +1165,17 @@ draw_tiles(const egpws_render_t *render)
 
 	glActiveTexture(GL_TEXTURE0);
 
-	glUseProgram(DEM_prog);
+	prog = (render->prog != 0 ? render->prog : DEM_prog);
+	glUseProgram(prog);
 
-	glUniformMatrix4fv(glGetUniformLocation(DEM_prog, "pvm"),
+	glUniformMatrix4fv(glGetUniformLocation(prog, "pvm"),
 	    1, GL_FALSE, (GLfloat *)pvm);
-	glUniform1i(glGetUniformLocation(DEM_prog, "tex"), 0);
-	glUniform1f(glGetUniformLocation(DEM_prog, "acf_elev_ft"),
+	glUniform1i(glGetUniformLocation(prog, "tex"), 0);
+	glUniform1f(glGetUniformLocation(prog, "acf_elev_ft"),
 	    MET2FEET(glob_pos.elev));
-	glUniform2fv(glGetUniformLocation(DEM_prog, "hgt_rngs_ft"),
+	glUniform2fv(glGetUniformLocation(prog, "hgt_rngs_ft"),
 	    4 * 2, hgt_rngs_ft);
-	glUniform4fv(glGetUniformLocation(DEM_prog, "hgt_colors"),
+	glUniform4fv(glGetUniformLocation(prog, "hgt_colors"),
 	    4 * 4, hgt_colors);
 
 	mutex_enter(&dem_tile_cache_lock);
@@ -1191,13 +1195,10 @@ draw_tiles(const egpws_render_t *render)
 		v[2] = geo2fpp(GEO_POS2(tile->lat + 1, tile->lon + 1), &fpp);
 		v[3] = geo2fpp(GEO_POS2(tile->lat, tile->lon + 1), &fpp);
 
-		for (int i = 0; i < 4; i++)
-			v[i] = vect2_scmul(v[i], render->scale);
-
 		glBindTexture(GL_TEXTURE_2D, tile->tex[tile->cur_tex]);
 
 		glutils_init_2D_quads(&quads, v, t, 4);
-		glutils_draw_quads(&quads, DEM_prog);
+		glutils_draw_quads(&quads, prog);
 		glutils_destroy_quads(&quads);
 	}
 	mutex_exit(&dem_tile_cache_lock);
@@ -1220,6 +1221,22 @@ terr_render(const egpws_render_t *render)
 #ifdef	FAST_DEBUG
 	VERIFY3U(glGetError(), ==, GL_NO_ERROR);
 #endif
+}
+
+fpp_t
+terr_render_get_fpp(const egpws_render_t *render)
+{
+	fpp_t fpp;
+
+	ASSERT(render != NULL);
+	ASSERT(!IS_NULL_GEO_POS2(render->position));
+	ASSERT(isfinite(render->rotation));
+
+	fpp = ortho_fpp_init(TO_GEO2(render->position), render->rotation,
+	    NULL, true);
+	fpp_set_scale(&fpp, VECT2(render->scale, render->scale));
+
+	return (fpp);
 }
 
 static void

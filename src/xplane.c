@@ -86,7 +86,7 @@ static struct {
 	bool_t	on;
 } nav1, nav2;
 
-static egpws_intf_t intf = {
+static egpws_intf_t egpws_intf = {
 	.set_state = set_state,
 	.set_flaps_ovrd = egpws_set_flaps_ovrd,
 	.set_pos_ok = set_pos_ok,
@@ -96,6 +96,7 @@ static egpws_intf_t intf = {
 	.set_nav_on = set_nav_on,
 	.set_ranges = terr_set_ranges,
 	.terr_render = terr_render,
+	.terr_render_get_fpp = terr_render_get_fpp,
 	.get_advisory = egpws_get_advisory,
 	.set_sound_inh = snd_sys_set_inh,
 	.set_sound_supp = snd_sys_set_supp,
@@ -392,7 +393,7 @@ XPluginReceiveMessage(XPLMPluginID from, int msg, void *param)
 	switch (msg) {
 	case EGPWS_GET_INTF: {
 		egpws_intf_t **intf_p = param;
-		*intf_p = &intf;
+		*intf_p = &egpws_intf;
 		break;
 	}
 	}
