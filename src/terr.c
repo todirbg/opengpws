@@ -1147,7 +1147,7 @@ draw_tiles(const egpws_render_t *render)
 	mat4 pvm;
 	GLfloat hgt_rngs_ft[4 * 2];
 	GLfloat hgt_colors[4 * 4];
-	GLuint prog;
+	GLint prog;
 
 	ASSERT(render != NULL);
 	fpp = terr_render_get_fpp(render);
