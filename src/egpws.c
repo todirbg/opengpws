@@ -24,6 +24,7 @@
 #include <acfutils/perf.h>
 #include <acfutils/time.h>
 #include <acfutils/thread.h>
+#include <acfutils/worker.h>
 
 #include "dbg_log.h"
 #include "egpws.h"
@@ -1097,9 +1098,10 @@ egpws_fini(void)
 	mutex_enter(&lock);
 	main_shutdown = B_TRUE;
 	cv_broadcast(&cv);
-	mutex_exit(&lock);
 
-	thread_join(&worker);
+    mutex_exit(&lock);
+    //cv_destroy(&cv);
+    thread_join(&worker);
 
 	while ((obst = list_remove_head(&state.obstacles)) != NULL)
 		free(obst);
@@ -1107,7 +1109,7 @@ egpws_fini(void)
 	mutex_destroy(&state.adv_lock);
 	mutex_destroy(&glob_data.lock);
 	mutex_destroy(&lock);
-	cv_destroy(&cv);
+
 
 	memset(&state, 0, sizeof (state));
 
