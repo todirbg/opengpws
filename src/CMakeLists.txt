@@ -13,7 +13,7 @@
 
 # Copyright 2022 Saso Kiselkov. All rights reserved.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.9)
 
 project(opengpws)
 
@@ -79,7 +79,7 @@ include_directories(opengpws PUBLIC
     "..")
 
 #compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror --std=c99 \
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror --std=c11 \
     -Wno-unused-local-typedefs -Wno-missing-field-initializers \
     -Wno-deprecated")
 if(!APPLE)
@@ -132,7 +132,8 @@ else()
 	set_target_properties(opengpws PROPERTIES LINK_FLAGS
 	    "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic -nodefaultlibs \
 	    -undefined_warning -fPIC -fvisibility=hidden \
-	    -static-libgcc -static-libstdc++")
+	    -static-libgcc -static-libstdc++ \
+	    -Wl,--version-script=symbols.version")
 endif()
 
 string(REGEX REPLACE "\n$" "" DEP_CFLAGS "${DEP_CFLAGS}")
